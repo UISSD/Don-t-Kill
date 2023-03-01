@@ -22,44 +22,7 @@ public class ActivityManagerServiceHooker extends AndroidLogSupportHooker {
      * checkExcessivePowerUsageLPr函数检查后台进程是否过量使用CPU时间
      * 当进程判断为过量使用后, 系统会将其kill掉
      * hook使之返回false, 即可避免因后台进程因过量使用CPU时间而kill掉
-     * <p>
-     * checkExcessivePowerUsageLPr源码:
-     * private boolean checkExcessivePowerUsageLPr(final long uptimeSince, boolean doCpuKills,
-     * final long cputimeUsed, final String processName, final String description,
-     * final int cpuLimit, final ProcessRecord app) {
-     * if (DEBUG_POWER && (uptimeSince > 0)) {
-     * StringBuilder sb = new StringBuilder(128);
-     * sb.append("CPU for ");
-     * sb.append(description);
-     * sb.append(": over ");
-     * TimeUtils.formatDuration(uptimeSince, sb);
-     * sb.append(" used ");
-     * TimeUtils.formatDuration(cputimeUsed, sb);
-     * sb.append(" (");
-     * sb.append((cputimeUsed * 100.0) / uptimeSince);
-     * sb.append("%)");
-     * Slog.i(TAG_POWER, sb.toString());
-     * }
-     * // If the process has used too much CPU over the last duration, the
-     * // user probably doesn't want this, so kill!
-     * if (doCpuKills && uptimeSince > 0) {
-     * if (((cputimeUsed * 100) / uptimeSince) >= cpuLimit) {
-     * mBatteryStatsService.reportExcessiveCpu(app.info.uid, app.processName,
-     * uptimeSince, cputimeUsed);
-     * app.getPkgList().forEachPackageProcessStats(holder -> {
-     * final ProcessState state = holder.state;
-     * FrameworkStatsLog.write(
-     * FrameworkStatsLog.EXCESSIVE_CPU_USAGE_REPORTED,
-     * app.info.uid,
-     * processName,
-     * state != null ? state.getPackage() : app.info.packageName,
-     * holder.appVersion);
-     * });
-     * return true;
-     * }
-     * }
-     * return false;
-     * }
+     * 源码链接:https://cs.android.com/android/platform/superproject/+/master:frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java;l=15343
      */
     private static void noExcessivePowerUsage(MethodHookParam param) {
         param.setResult(false);

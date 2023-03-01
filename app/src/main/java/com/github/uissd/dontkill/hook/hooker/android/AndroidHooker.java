@@ -16,9 +16,11 @@ public class AndroidHooker extends AndroidLogSupport implements Hooker {
         if (loadPackageParam.packageName.equals("android")) {
             ActivityManagerServiceHooker activityManagerServiceHooker = new ActivityManagerServiceHooker(loadPackageParam);
             RecentTasksHooker recentTasksHooker = new RecentTasksHooker(loadPackageParam);
+            PhantomProcessListHooker phantomProcessListHooker = new PhantomProcessListHooker(loadPackageParam);
 
             boolean success = activityManagerServiceHooker.hook();
             success &= recentTasksHooker.hook();
+            success &= phantomProcessListHooker.hook();
             if (success) {
                 logger.i("hook Android success");
                 return true;
