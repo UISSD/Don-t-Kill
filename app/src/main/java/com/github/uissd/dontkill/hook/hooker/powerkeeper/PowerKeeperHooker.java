@@ -4,7 +4,7 @@ import com.github.uissd.dontkill.hook.hooker.Hooker;
 
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
-public class PowerKeeperHooker extends PowerKeeperLogSupport implements Hooker {
+public class PowerKeeperHooker implements Hooker {
 
     private final LoadPackageParam loadPackageParam;
 
@@ -15,6 +15,21 @@ public class PowerKeeperHooker extends PowerKeeperLogSupport implements Hooker {
     @Override
     public boolean hook() {
         if (loadPackageParam.packageName.equals("com.miui.powerkeeper")) {
+            return new PowerKeeperHookerImpl(loadPackageParam).hook();
+        }
+        return false;
+    }
+
+    static class PowerKeeperHookerImpl extends PowerKeeperLogSupport implements Hooker {
+
+        private final LoadPackageParam loadPackageParam;
+
+        public PowerKeeperHookerImpl(LoadPackageParam loadPackageParam) {
+            this.loadPackageParam = loadPackageParam;
+        }
+
+        @Override
+        public boolean hook() {
             PowerStateMachineHooker powerStateMachineHooker = new PowerStateMachineHooker(loadPackageParam);
             SleepModeControllerNewHooker sleepModeControllerNewHooker = new SleepModeControllerNewHooker(loadPackageParam);
 
@@ -22,11 +37,10 @@ public class PowerKeeperHooker extends PowerKeeperLogSupport implements Hooker {
             success &= sleepModeControllerNewHooker.hook();
             if (success) {
                 logger.i("hook PowerKeeper success");
-                return true;
             } else {
                 logger.e("hook PowerKeeper failed");
             }
+            return success;
         }
-        return false;
     }
 }
