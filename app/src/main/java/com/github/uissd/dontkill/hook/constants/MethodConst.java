@@ -26,6 +26,9 @@ public final class MethodConst {
     // com.github.uissd.dontkill.hook.hooker.powerkeeper.SleepModeControllerNewHooker
     public static final String CLEAR_APP = "clearApp";
 
+    // com.github.uissd.dontkill.hook.hooker.android.OomAdjusterHooker
+    public static final String SHOULD_KILL_EXCESSIVE_PROCESSES = "shouldKillExcessiveProcesses";
+
     private MethodConst() {
     }
 

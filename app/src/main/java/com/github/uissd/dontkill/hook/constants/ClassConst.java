@@ -21,6 +21,13 @@ public final class ClassConst {
     // com.github.uissd.dontkill.hook.hooker.powerkeeper.SleepModeControllerNewHooker
     public static final String SLEEP_MODE_CONTROLLER_NEW = "com.miui.powerkeeper.statemachine.SleepModeControllerNew";
 
+    // com.github.uissd.dontkill.hook.hooker.android.OomAdjusterHooker
+    public static final String OOM_ADJUSTER = "com.android.server.am.OomAdjuster";
+
+    // com.github.uissd.dontkill.hook.hooker.android.ActivityManagerConstantsHooker
+    public static final String ACTIVITY_MANAGER_CONSTANTS = "com.android.server.am.ActivityManagerConstants";
+    public static final String ACTIVITY_MANAGER_SERVICE1 = "com.android.server.am.ActivityManagerService";
+
     private ClassConst() {
     }
 
