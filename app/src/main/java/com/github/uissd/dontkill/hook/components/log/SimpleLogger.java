@@ -1,7 +1,7 @@
 package com.github.uissd.dontkill.hook.components.log;
 
 /**
- * 简单日志类, 解决log时频繁传入tag与logfile的烦恼
+ * 简单日志类, 实现以固定tag与logfile输出日志功能
  */
 public class SimpleLogger {
 
@@ -61,5 +61,13 @@ public class SimpleLogger {
 
     public void pop(LogFile logFile) {
         logger.pop(logFile);
+    }
+
+    public void flush() {
+        logger.flush(file);
+    }
+
+    public void flush(LogFile logFile) {
+        logger.flush(logFile);
     }
 }

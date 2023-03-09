@@ -31,10 +31,11 @@ public class PowerKeeperHooker implements Hooker {
         @Override
         public boolean hook() {
             PowerStateMachineHooker powerStateMachineHooker = new PowerStateMachineHooker(loadPackageParam);
-            SleepModeControllerNewHooker sleepModeControllerNewHooker = new SleepModeControllerNewHooker(loadPackageParam);
-
             boolean success = powerStateMachineHooker.hook();
+
+            SleepModeControllerNewHooker sleepModeControllerNewHooker = new SleepModeControllerNewHooker(loadPackageParam);
             success &= sleepModeControllerNewHooker.hook();
+
             if (success) {
                 logger.i("hook PowerKeeper success");
             } else {

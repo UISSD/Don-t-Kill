@@ -30,12 +30,17 @@ public class AndroidHooker implements Hooker {
         @Override
         public boolean hook() {
             ActivityManagerServiceHooker activityManagerServiceHooker = new ActivityManagerServiceHooker(loadPackageParam);
-            RecentTasksHooker recentTasksHooker = new RecentTasksHooker(loadPackageParam);
-            PhantomProcessListHooker phantomProcessListHooker = new PhantomProcessListHooker(loadPackageParam);
-
             boolean success = activityManagerServiceHooker.hook();
+
+            RecentTasksHooker recentTasksHooker = new RecentTasksHooker(loadPackageParam);
             success &= recentTasksHooker.hook();
+
+            PhantomProcessListHooker phantomProcessListHooker = new PhantomProcessListHooker(loadPackageParam);
             success &= phantomProcessListHooker.hook();
+
+            ActivityManagerConstantsHooker activityManagerConstantsHooker = new ActivityManagerConstantsHooker(loadPackageParam);
+            success &= activityManagerConstantsHooker.hook();
+
             if (success) {
                 logger.i("hook Android success");
             } else {

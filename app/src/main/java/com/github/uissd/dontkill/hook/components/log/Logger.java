@@ -2,8 +2,7 @@ package com.github.uissd.dontkill.hook.components.log;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
@@ -14,51 +13,57 @@ import de.robv.android.xposed.XposedBridge;
  */
 public class Logger {
 
-    private final String tag;
+    private final String rootTag;
     private final LogOutput output;
-    private String buffer = "";
-    private int stack;
+    private volatile String buffer = "";
+    private volatile int stack;
 
     public Logger() {
         this("", LogOutput.DEFAULT_LOG_OUTPUT);
     }
 
-    public Logger(String tag) {
-        this(tag, LogOutput.DEFAULT_LOG_OUTPUT);
+    public Logger(String rootTag) {
+        this(rootTag, LogOutput.DEFAULT_LOG_OUTPUT);
     }
 
     public Logger(LogOutput output) {
         this("", output);
     }
 
-    public Logger(String tag, LogOutput output) {
-        this.tag = tag;
+    public Logger(String rootTag, LogOutput output) {
+        this.rootTag = rootTag;
         this.output = output;
     }
 
     /**
      * hook的目标函数执行前需调用一次push, tag用于记录当前堆栈信息
-     * 一般用于记录当前调用函数, 需要结合pop(LogFile)使用
+     * 一般用于记录当前调用函数, 需要结合pop(LogFile file)使用
      *
      * @param msg 当前堆栈信息
      */
     public void push(String msg) {
-        buffer += getNewLine(msg);
-        stack++;
+        synchronized (this) {
+            buffer += getNewLine(msg);
+            stack++;
+        }
     }
 
     /**
      * hook的目标函数执行后需调用一次pop, file用来决定输出的日志文件
-     * 只有堆栈清空时才会输出, 需要结合push(String)使用
+     * 只有堆栈清空时才会输出, 需要结合push(String msg)使用
      * file为空时不输出日志文件
      *
      * @param file 日志文件
      */
     public void pop(LogFile file) {
-        if (stack > 0) {
-            stack--;
+        synchronized (this) {
+            if (stack > 0) {
+                stack--;
+            } else {
+                logErr("pop too much", new Exception());
+            }
             if (stack == 0) {
-                d(tag, buffer, file);
+                d(rootTag, buffer, file);
                 buffer = "";
             }
         }
@@ -67,11 +72,24 @@ public class Logger {
     /**
      * hook的目标函数调用期间使用的日志输出方法
      * 可实现代码缩进风格的堆栈信息输出, 默认为debug级别
+     * log的内容不会立即输出, 只有堆栈清空时才会输出
      *
      * @param msg 需要输出的日志信息
      */
     public void log(String msg) {
-        buffer += getNewLine(msg);
+        synchronized (this) {
+            buffer += getNewLine(msg);
+        }
+    }
+
+    /**
+     * 输出并清空日志缓冲区, 重置堆栈
+     *
+     * @param file 日志文件
+     */
+    public void flush(LogFile file) {
+        stack = 0;
+        pop(file);
     }
 
     public void d(String tag, String msg, LogFile file) {
@@ -106,11 +124,19 @@ public class Logger {
 
     private void saveLog(String level, String tag, String msg, LogFile file) {
         if (file != null) {
-            file.write(getFormatMsg(level, tag, msg));
+            try {
+                file.write(getFormatMsg(level, tag, msg));
+            } catch (IOException e) {
+                logErr("write err", e);
+            }
         }
     }
 
-    @NonNull
+    private void logErr(String msg, Exception e) {
+        String s = msg + "\n" + e + "\n" + Log.getStackTraceString(e);
+        e(String.join(".", rootTag, getClass().getSimpleName()), s, null);
+    }
+
     private String getNewLine(String msg) {
         return "\n" + getIntent() + msg;
     }
