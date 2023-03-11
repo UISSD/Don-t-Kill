@@ -25,6 +25,7 @@ public class PowerKeeperHooker implements Hooker {
         private final LoadPackageParam loadPackageParam;
 
         public PowerKeeperHookerImpl(LoadPackageParam loadPackageParam) {
+            super("PowerKeeperHookerImpl");
             this.loadPackageParam = loadPackageParam;
         }
 

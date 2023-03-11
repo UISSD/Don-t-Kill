@@ -24,6 +24,7 @@ public class AndroidHooker implements Hooker {
         private final LoadPackageParam loadPackageParam;
 
         public AndroidHookerImpl(LoadPackageParam loadPackageParam) {
+            super("AndroidHookerImpl");
             this.loadPackageParam = loadPackageParam;
         }
 
