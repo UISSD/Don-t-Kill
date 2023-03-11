@@ -9,111 +9,70 @@ import java.util.Locale;
 import de.robv.android.xposed.XposedBridge;
 
 /**
- * 日志类, 实现代码缩进风格的堆栈信息输出, 也可进行常规的info, debug, error输出
+ * 日志类, 支持常规的info, debug, error输出
  */
 public class Logger {
 
-    private final String rootTag;
-    private final LogOutput output;
-    private volatile String buffer = "";
-    private volatile int stack;
+    protected final String tag;
+    protected final LogFile file;
 
     public Logger() {
-        this("", LogOutput.DEFAULT_LOG_OUTPUT);
+        this("", null);
     }
 
-    public Logger(String rootTag) {
-        this(rootTag, LogOutput.DEFAULT_LOG_OUTPUT);
+    public Logger(String tag) {
+        this(tag, null);
     }
 
-    public Logger(LogOutput output) {
-        this("", output);
+    public Logger(LogFile file) {
+        this("", file);
     }
 
-    public Logger(String rootTag, LogOutput output) {
-        this.rootTag = rootTag;
-        this.output = output;
+    public Logger(String tag, LogFile file) {
+        this.tag = tag;
+        this.file = file;
     }
 
-    /**
-     * hook的目标函数执行前需调用一次push, tag用于记录当前堆栈信息
-     * 一般用于记录当前调用函数, 需要结合pop(LogFile file)使用
-     *
-     * @param msg 当前堆栈信息
-     */
-    public void push(String msg) {
-        synchronized (this) {
-            buffer += getNewLine(msg);
-            stack++;
-        }
+    public Logger(Logger logger) {
+        this(logger.tag, logger.file);
     }
 
-    /**
-     * hook的目标函数执行后需调用一次pop, file用来决定输出的日志文件
-     * 只有堆栈清空时才会输出, 需要结合push(String msg)使用
-     * file为空时不输出日志文件
-     *
-     * @param file 日志文件
-     */
-    public void pop(LogFile file) {
-        synchronized (this) {
-            if (stack > 0) {
-                stack--;
-            } else {
-                logErr("pop too much", new Exception());
-            }
-            if (stack == 0) {
-                d(rootTag, buffer, file);
-                buffer = "";
-            }
-        }
+    public void d(String msg) {
+        d(tag, msg, file);
     }
 
-    /**
-     * hook的目标函数调用期间使用的日志输出方法
-     * 可实现代码缩进风格的堆栈信息输出, 默认为debug级别
-     * log的内容不会立即输出, 只有堆栈清空时才会输出
-     *
-     * @param msg 需要输出的日志信息
-     */
-    public void log(String msg) {
-        synchronized (this) {
-            buffer += getNewLine(msg);
-        }
+    public void i(String msg) {
+        i(tag, msg, file);
     }
 
-    /**
-     * 输出并清空日志缓冲区, 重置堆栈
-     *
-     * @param file 日志文件
-     */
-    public void flush(LogFile file) {
-        stack = 0;
-        pop(file);
+    public void e(String msg) {
+        e(tag, msg, file);
+    }
+
+    public void e(Exception e) {
+        e(tag, e, file);
     }
 
     public void d(String tag, String msg, LogFile file) {
-        output.d(tag, msg);
+        Log.d(tag, msg);
         saveLog("[DEBUG]", tag, msg, file);
     }
 
-
     public void i(String tag, String msg, LogFile file) {
-        output.i(tag, msg);
+        Log.i(tag, msg);
         saveLog("[INFO]", tag, msg, file);
     }
 
     public void e(String tag, String msg, LogFile file) {
         XposedBridge.log("[ERROR]" + tag + ": " + msg);
-        output.e(tag, msg);
+        Log.e(tag, msg);
         saveLog("[ERROR]", tag, msg, file);
     }
 
     public void e(String tag, Exception e, LogFile file) {
-        String stackTrace = Log.getStackTraceString(e == null ? new Throwable() : e);
-        String msg = e + "\n" + stackTrace;
+        String msg = e + "\n" + Log.getStackTraceString(e == null ? new Throwable() : e);
         XposedBridge.log("[ERROR]" + tag + ": " + msg);
-        output.e(tag, msg);
+        Log.e(tag, msg);
         saveLog("[ERROR]", tag, msg, file);
     }
 
@@ -127,25 +86,18 @@ public class Logger {
             try {
                 file.write(getFormatMsg(level, tag, msg));
             } catch (IOException e) {
-                logErr("write err", e);
+                e.addSuppressed(new Throwable("write err"));
+                e(e);
             }
         }
     }
 
-    private void logErr(String msg, Exception e) {
-        String s = msg + "\n" + e + "\n" + Log.getStackTraceString(e);
-        e(String.join(".", rootTag, getClass().getSimpleName()), s, null);
+    public String getTag() {
+        return tag;
     }
 
-    private String getNewLine(String msg) {
-        return "\n" + getIntent() + msg;
-    }
-
-    private String getIntent() {
-        StringBuilder indent = new StringBuilder();
-        for (int i = 0; i < stack; i++) {
-            indent.append("  ");
-        }
-        return indent.toString();
+    public LogFile getFile() {
+        return file;
     }
 }
+

@@ -3,7 +3,6 @@ package com.github.uissd.dontkill.hook.components.log;
 import android.app.AlarmManager;
 import android.app.AndroidAppHelper;
 import android.content.Context;
-import android.util.Log;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -15,24 +14,22 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-import de.robv.android.xposed.XposedBridge;
-
 /**
  * 日志文件类, 实现定时创建/清理日志文件功能
  */
 public class LogFile {
 
     private static final long ONE_MINUTE = 1000 * 60;
-    private final String tag;
     private final String dirPath;
     private final String fileName;
+    private final Logger logger;
     private volatile boolean opened = false;
     private volatile BufferedWriter mBufferedWriter;
 
     public LogFile(String tag, String dirPath, String fileName) {
-        this.tag = tag;
         this.dirPath = dirPath;
         this.fileName = fileName;
+        this.logger = new Logger(tag);
         updateFile();
         setUpdateFileTaskDelay();
     }
@@ -55,10 +52,10 @@ public class LogFile {
         synchronized (this) {
             try {
                 if (mDir.mkdirs()) {
-                    Log.d(tag, "mkdirs " + mDir);
+                    logger.d("mkdirs " + mDir);
                 }
                 if (mFile.createNewFile()) {
-                    Log.d(tag, "create new file " + mFile);
+                    logger.d("create new file " + mFile);
                 }
                 if (mBufferedWriter != null) {
                     mBufferedWriter.close();
@@ -67,7 +64,8 @@ public class LogFile {
                 opened = true;
                 flushDelay(mBufferedWriter);
             } catch (Exception e) {
-                logErr("open LogFile err: " + mFile, e);
+                e.addSuppressed(new Throwable("open LogFile err: " + mFile));
+                logger.e(e);
                 opened = false;
             }
         }
@@ -76,12 +74,6 @@ public class LogFile {
     private String getFormatFileName(String fileName, Date format) {
         String dateFormat = new SimpleDateFormat("yyyy_MM_dd", Locale.CHINA).format(format);
         return String.format("%s_%s.log", fileName, dateFormat);
-    }
-
-    private void logErr(String msg, Exception e) {
-        String s = msg + "\n" + e + "\n" + Log.getStackTraceString(e);
-        Log.e(tag, s);
-        XposedBridge.log("[ERROR]" + tag + ": " + s);
     }
 
     public void write(String msg) throws IOException {
@@ -106,7 +98,8 @@ public class LogFile {
                     throw new Exception(old.getAbsolutePath() + " delete failed");
                 }
             } catch (Exception e) {
-                logErr("updateFile err", e);
+                e.addSuppressed(new Throwable("updateFile err"));
+                logger.e(e);
             }
         }
     }
@@ -119,7 +112,8 @@ public class LogFile {
                     bufferedWriter.flush();
                 }
             } catch (Exception e) {
-                logErr("flushDelay err", e);
+                e.addSuppressed(new Throwable("flushDelay err"));
+                logger.e(e);
             }
         }).start();
     }
@@ -131,9 +125,10 @@ public class LogFile {
         new Thread(() -> {
             try {
                 Thread.sleep(ONE_MINUTE);
-                setAlarm(getTomorrow(), tag, this::updateFileRepeat);
+                setAlarm(getTomorrow(), logger.tag, this::updateFileRepeat);
             } catch (Exception e) {
-                logErr("setUpdateFileTaskDelay err", e);
+                e.addSuppressed(new Throwable("setUpdateFileTaskDelay err"));
+                logger.e(e);
             }
         }).start();
     }
@@ -144,9 +139,10 @@ public class LogFile {
     private void updateFileRepeat() {
         try {
             updateFile();
-            setAlarm(getTomorrow(), tag, this::updateFileRepeat);
+            setAlarm(getTomorrow(), logger.tag, this::updateFileRepeat);
         } catch (Exception e) {
-            logErr("updateFileRepeat err", e);
+            e.addSuppressed(new Throwable("updateFileRepeat err"));
+            logger.e(e);
         }
     }
 
